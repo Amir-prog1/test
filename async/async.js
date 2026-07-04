@@ -2,77 +2,70 @@ const message = document.getElementById("message");
 const userContainer = document.getElementById("users");
 const deleteAllBtn = document.getElementById("deleteAll");
 const showAllBtn = document.getElementById("showAll");
+const controls = document.getElementById("controls");
+
+let users = [];
 
 function delay(ms) {
-  return new Promise(resolve => {
-    setTimeout(resolve, ms);
-  });
+  return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 function getUsersFromStorage() {
   const data = localStorage.getItem("users");
-
-  if (data === null) {
-    return null;
-  }
-
-  return JSON.parse(data);
+  return data ? JSON.parse(data) : [];
 }
 
-function saveUsersToStorage(users) {
-  localStorage.setItem("users", JSON.stringify(users));
+function saveUsersToStorage(data) {
+  users = data;
+  localStorage.setItem("users", JSON.stringify(data));
 }
 
-function renderUsers(users) {
+function createCard(user) {
+  const card = document.createElement("div");
+  card.className = "card";
+
+  card.innerHTML = `
+    <h3>${user.name} ${user.surname}</h3>
+    <p>Email: ${user.email}</p>
+    <p>Возраст: ${user.age}</p>
+    <p>Город: ${user.city}</p>
+    <button>Удалить</button>
+  `;
+
+  card.querySelector("button").addEventListener("click", () => {
+    deleteUser(user.id);
+  });
+
+  return card;
+}
+
+function renderUsers(data) {
   userContainer.innerHTML = "";
 
-  if (users.length === 0) {
+  if (!data || data.length === 0) {
     message.textContent = "Пользователей нет";
     return;
   }
 
   message.textContent = "";
 
-  users.forEach(user => {
-    const card = document.createElement("div");
-
-    card.classList.add("card");
-
-    card.innerHTML = `
-      <h3>${user.name} ${user.surname}</h3>
-      <p>Email: ${user.email}</p>
-      <p>Возраст: ${user.age}</p>
-      <p>Город: ${user.city}</p>
-      <button>Удалить</button>
-    `;
-
-    const deleteBtn = card.querySelector("button");
-
-    deleteBtn.addEventListener("click", () => {
-      deleteUser(user.id);
-    });
-
-    userContainer.append(card);
+  data.forEach(user => {
+    userContainer.appendChild(createCard(user));
   });
 }
 
 function deleteUser(id) {
-  const users = getUsersFromStorage();
+  users = users.filter(user => user.id !== id);
 
-  const updatedUsers = users.filter(user => {
-    return user.id !== id;
-  });
-
-  saveUsersToStorage(updatedUsers);
-
-  renderUsers(updatedUsers);
+  saveUsersToStorage(users);
+  renderUsers(users);
 }
 
 async function loadUsers() {
   try {
     message.textContent = "Данные загружаются...";
 
-    await delay(2000);
+    await delay(3000);
 
     const response = await fetch("./async.json");
 
@@ -84,35 +77,31 @@ async function loadUsers() {
 
     saveUsersToStorage(data.users);
 
-    localStorage.setItem("usersLoaded", "true");
+    users = data.users;
+    renderUsers(users);
 
-    renderUsers(data.users);
+    controls.style.display = "block";
 
   } catch (error) {
     console.error(error);
-
-    message.textContent = "Ошибка при загрузке данных";
+    message.textContent = error.message;
   }
 }
 
 deleteAllBtn.addEventListener("click", () => {
-  const users = getUsersFromStorage();
-
-  if (!users || users.length === 0) {
+  if (users.length === 0) {
     message.textContent = "Пользователей уже нет";
     return;
   }
 
-  saveUsersToStorage([]);
-
-  renderUsers([]);
+  users = [];
+  saveUsersToStorage(users);
+  renderUsers(users);
 });
 
 showAllBtn.addEventListener("click", async () => {
-  const users = getUsersFromStorage();
-
-  if (users && users.length > 0) {
-    message.textContent = "Все пользователи уже отображаются";
+  if (users.length > 0) {
+    message.textContent = "Все пользователи уже загружены";
     return;
   }
 
@@ -120,14 +109,13 @@ showAllBtn.addEventListener("click", async () => {
 });
 
 function init() {
-  const users = getUsersFromStorage();
+  users = getUsersFromStorage();
 
-  const usersLoaded = localStorage.getItem("usersLoaded");
-
-  if (users === null && !usersLoaded) {
+  if (users.length === 0) {
     loadUsers();
   } else {
-    renderUsers(users || []);
+    renderUsers(users);
+    controls.style.display = "block";
   }
 }
 
