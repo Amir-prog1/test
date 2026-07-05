@@ -12,7 +12,12 @@ function delay(ms) {
 
 function getUsersFromStorage() {
   const data = localStorage.getItem("users");
-  return data ? JSON.parse(data) : [];
+
+  if (data === null) {
+    return null;
+  }
+
+  return JSON.parse(data);
 }
 
 function saveUsersToStorage(data) {
@@ -84,7 +89,7 @@ async function loadUsers() {
 
   } catch (error) {
     console.error(error);
-    message.textContent = error.message;
+    message.textContent = "Ошибка при загрузке данных";
   }
 }
 
@@ -111,7 +116,7 @@ showAllBtn.addEventListener("click", async () => {
 function init() {
   users = getUsersFromStorage();
 
-  if (users.length === 0) {
+  if (users === null) {
     loadUsers();
   } else {
     renderUsers(users);
