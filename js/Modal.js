@@ -3,6 +3,7 @@ export default class Modal {
     this.modal = document.querySelector(modalClass);
     this.closeButton = this.modal.querySelector(".close-modal-button");
     this.listenCloseButton();
+    this.listenOverlay();
   }
   open() {
     this.modal.classList.add("modal-showed");
@@ -16,6 +17,13 @@ export default class Modal {
   listenCloseButton() {
     this.closeButton.addEventListener("click", () => {
       this.close();
+    });
+  }
+  listenOverlay() {
+    this.modal.addEventListener("click", (event) => {
+      if (event.target === this.modal) {
+        this.close();
+      }
     });
   }
 }
